@@ -1,4 +1,6 @@
 var gameStarted = false; // true à la fin du cowndown
+let gameOver = false;
+const urlParams = new URLSearchParams(window.location.search);
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 let mouseX = canvas.width / 2;
@@ -8,21 +10,22 @@ canvas.addEventListener('mousemove', (event) => {
     mouseX = event.clientX - canvas.getBoundingClientRect().left;
     mouseY = event.clientY - canvas.getBoundingClientRect().top;
 });
-let isMouseDown = false;
 let useSpeedForContraction = true; // Booléen pour basculer entre les modes de contraction
-let mode = "timed"; // Peut être "timed" ou "endless"
+let mode = urlParams.has("mode") ? urlParams.get("mode") : "timed"; // Peut être "timed" ou "golden_death"
 var score = 0;
 let lives = 5;
 const startingLives = lives;
 let gameStartTime;
 const gameDuration = 60000; // 1 minute en millisecondes pour le mode chronométré
-let gameOver = false;
+
+let isMouseDown = false;
 canvas.addEventListener('mousedown', () => {
     isMouseDown = true;
 });
 canvas.addEventListener('mouseup', () => {
     isMouseDown = false;
 });
+
 let boule = {
     x: canvas.width / 2,
     y: canvas.height / 2,
@@ -339,33 +342,52 @@ function drawHeart(x, y, size, empty = false) {
     ctx.fill();
 }
 
+let flashActive = false;
+
+function triggerCollisionFlash() {
+    canvas.classList.add('is-negative');
+    setTimeout(() => {
+        canvas.classList.remove('is-negative');
+    }, 250); // Durée du flash en millisecondes
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function drawProgressBar() {
-    if (mode === "timed") {
-        let progressBarX = canvas.width / 2 - 100; // Position de départ pour la barre de progression
-        let progressBarY = canvas.height - 15; // Position en Y pour la barre de progression
-        let progressBarWidth = 200; // Largeur de la barre de progression
-        let progressBarHeight = 10; // Hauteur de la barre de progression
-        let timeElapsed = Date.now() - gameStartTime;
-        // Dessiner la barre de fond grise
-        ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
-        ctx.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
-        // Calculer la largeur de la barre de progression verte
-        let greenBarWidth = (timeElapsed / gameDuration) * progressBarWidth;
-        greenBarWidth = greenBarWidth > progressBarWidth ? progressBarWidth : greenBarWidth; // Limiter à la largeur maximale
-        // Dessiner la barre de progression verte
-        ctx.fillStyle = 'rgba(144, 238, 144, 0.5)';
-        ctx.fillRect(progressBarX, progressBarY, greenBarWidth, progressBarHeight);
-    }
+    let progressBarX = canvas.width / 2 - 100; // Position de départ pour la barre de progression
+    let progressBarY = canvas.height - 15; // Position en Y pour la barre de progression
+    let progressBarWidth = 200; // Largeur de la barre de progression
+    let progressBarHeight = 10; // Hauteur de la barre de progression
+    let timeElapsed = Date.now() - gameStartTime;
+    // Dessiner la barre de fond grise
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
+    ctx.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
+    // Calculer la largeur de la barre de progression verte
+    let greenBarWidth = (timeElapsed / gameDuration) * progressBarWidth;
+    greenBarWidth = greenBarWidth > progressBarWidth ? progressBarWidth : greenBarWidth; // Limiter à la largeur maximale
+    // Dessiner la barre de progression verte
+    ctx.fillStyle = 'rgba(144, 238, 144, 0.5)';
+    ctx.fillRect(progressBarX, progressBarY, greenBarWidth, progressBarHeight);
 }
 
 function drawScore() {
-    if (mode === "timed") {
-        let scoreX = canvas.width / 2 + 140; // Position en X à droite de la barre de progression
-        let scoreY = canvas.height - 5; // Position en Y, alignée avec la barre de progression
-        ctx.font = '16px Arial';
-        ctx.fillStyle = 'black';
-        ctx.fillText("Score: " + score, scoreX, scoreY);
-    }
+    let scoreX = canvas.width / 2 + 140; // Position en X à droite de la barre de progression
+    let scoreY = canvas.height - 5; // Position en Y, alignée avec la barre de progression
+    ctx.font = '16px Arial';
+    ctx.fillStyle = 'black';
+    ctx.fillText("Score: " + score, scoreX, scoreY);
 }
 
 function update() {
@@ -387,18 +409,28 @@ function update() {
                 if (!isInvincible()) {
                     console.log("Collision détectée !");
                     lives--;
-                    checkGameOver();
+                    triggerCollisionFlash();
+                    // vérifie le gameover seulement quand touché
+                    if(mode == "golden_death") {
+                        checkGameOver();    
+                    }
                 }
             }
             lastInvincibilityTime = Date.now();
         }
+        // vérifie le gameover constamment
+        if(mode == "timed") {
+            checkGameOver();    
+        }
         drawHearts(); // Dessiner les cœurs
         drawProgressBar(); // Dessiner la barre de progression
         drawScore(); // Afficher le score
+
         if(!gameStarted) {
             updateCountdown();
             drawCountdown();
         }
+
         requestAnimationFrame(update);
     }
     else {
@@ -407,13 +439,12 @@ function update() {
 }
 
 function checkGameOver() {
-    if (lives <= 0 || (mode === "timed" && Date.now() - gameStartTime > gameDuration)) {
+    if (lives <= 0 || Date.now() - gameStartTime > gameDuration) {
         gameOver = true;
         let survived = lives > 0;
         let isPerfect = startingLives == lives;
         let placeholderPseudo = '';
-        // Récupérer le pseudo depuis l'URL si existe (?pseudo=toto)
-        const urlParams = new URLSearchParams(window.location.search);
+        // Récupérer le pseudo depuis l'URL si existe
         if (urlParams.has('pseudo')) {
             placeholderPseudo = urlParams.get('pseudo');
         }
