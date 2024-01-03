@@ -10,7 +10,7 @@
 
     <div id="mainContent">
         <div id="gameModesContainer">
-            <a href="./game.php?mode=timed"><h2>Meilleur score en une minute (5 vies)</h2></a>
+            <a href="./game.php?mode=timed"><h2 title="Un max de points une minute">Meilleur score en une minute (5 vies)</h2></a>
             <a href="./game.php?mode=golden_death"><h2 title="Si encore vivant après une minute, mort subite au prochain impact.">Meilleur score en une minute (5 vies) + survie</h2></a>
         </div> 
     </div>

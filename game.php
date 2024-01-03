@@ -116,11 +116,34 @@
                 // Inclure le fichier de connexion (si ce n'est pas déjà fait)
                 include 'connect.php';
                 date_default_timezone_set('Europe/Paris');
+                $gameMode = $_GET['mode']; // 'timed' or 'golden death'
 
-                // Requête SELECT pour obtenir les scores
-                $sql = "SELECT id, pseudo, score, created_date, remaining_lives, is_perfect FROM score ORDER BY score DESC";
+                // Préparer la requête SQL
 
-                $result = $conn->query($sql);
+
+                $sql = "SELECT s.id, s.pseudo, s.score, s.created_date, s.remaining_lives, s.is_perfect 
+FROM score s 
+INNER JOIN (
+    SELECT pseudo, MAX(score) AS max_score
+    FROM score
+    GROUP BY pseudo
+) AS max_scores ON s.pseudo = max_scores.pseudo AND s.score = max_scores.max_score
+WHERE game_mode = ? ORDER BY s.score DESC, s.created_date ASC;";
+
+                // Préparer la déclaration
+                $stmt = $conn->prepare($sql);
+
+                // Vérifier si la déclaration a été préparée correctement
+                if ($stmt === false) {
+                    die("Erreur lors de la préparation : " . $conn->error);
+                }
+
+                // Lier les paramètres et exécuter la requête
+                $stmt->bind_param("s", $gameMode); // "s" signifie que le paramètre est une chaîne de caractères (string)
+                $stmt->execute();
+
+                // Obtenir le résultat
+                $result = $stmt->get_result();
 
                 if ($result && $result->num_rows > 0) {
                     // Parcourir chaque enregistrement

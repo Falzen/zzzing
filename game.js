@@ -466,12 +466,17 @@ function submitScore(pseudo, score, remainingLives, survived, isPerfect) {
         if (this.readyState == 4 && this.status == 200) {
             console.log(this.responseText);
             // Redirection avec le pseudo en paramètre
-            window.location.href = window.location.pathname + '?pseudo=' + encodeURIComponent(pseudo);
+            let urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('pseudo', encodeURIComponent(pseudo)); // Ajoute ou met à jour le paramètre 'pseudo'
+
+            // Construire la nouvelle URL avec les paramètres existants plus le 'pseudo'
+            window.location.href = window.location.pathname + '?' + urlParams.toString();
+
         }
     };
     xhttp.open("POST", "insert_score.php", true);
     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    xhttp.send("pseudo=" + pseudo + "&score=" + score + "&remaining_lives=" + remainingLives + "&survived=" + survived + "&is_perfect=" + isPerfect);
+    xhttp.send("pseudo=" + pseudo + "&score=" + score + "&remaining_lives=" + remainingLives + "&survived=" + survived + "&is_perfect=" + isPerfect + "&game_mode=" + mode);
 }
 resetGame();
 update();
